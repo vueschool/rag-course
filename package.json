@@ -2,14 +2,18 @@
   "name": "rag-course",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "chunk-docs": "node scripts/chunk-docs.js"
   },
   "dependencies": {
+    "@langchain/textsplitters": "^0.1.0",
     "@types/highlight.js": "^9.12.4",
+    "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.540.0",
     "next": "15.4.6",
