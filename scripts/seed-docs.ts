@@ -89,6 +89,7 @@ async function seedDocuments() {
         const [doc] = await db
           .insert(documents)
           .values({
+            id: file.path,
             title: file.title,
             content: file.content,
           })

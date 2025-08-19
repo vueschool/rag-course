@@ -110,7 +110,7 @@ async function processMarkdownFile(filePath, textSplitter) {
       return {
         content: chunkContent,
         metadata: {
-          source: relativePath,
+          source: relativePath.replace(/^docs\//, ""),
           documentSlug: frontmatter.slug,
           documentTitle: frontmatter.title,
           documentPageType: frontmatter["page-type"],

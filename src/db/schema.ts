@@ -20,7 +20,7 @@ export const users = pgTable("users", {
 });
 
 export const documents = pgTable("documents", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(),
   title: text("title").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -32,7 +32,7 @@ export const chunks = pgTable(
   "chunks",
   {
     id: serial("id").primaryKey(),
-    documentId: integer("document_id")
+    documentId: text("document_id")
       .references(() => documents.id)
       .notNull(),
     content: text("content").notNull(),
