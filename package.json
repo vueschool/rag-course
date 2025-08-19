@@ -21,6 +21,7 @@
   "dependencies": {
     "@langchain/textsplitters": "^0.1.0",
     "@types/highlight.js": "^9.12.4",
+    "ai": "^5.0.17",
     "dotenv": "^17.2.1",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.4",
@@ -35,7 +36,8 @@
     "react-markdown": "^10.1.0",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
-    "tsx": "^4.20.4"
+    "tsx": "^4.20.4",
+    "voyage-ai-provider": "^2.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
