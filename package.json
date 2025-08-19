@@ -10,6 +10,7 @@
     "lint": "next lint",
     "chunk-docs": "node scripts/chunk-docs.js",
     "seed-docs": "tsx scripts/seed-docs.ts",
+    "seed-chunks": "tsx scripts/seed-chunks.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
