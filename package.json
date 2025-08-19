@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "chunk-docs": "node scripts/chunk-docs.js",
+    "seed-docs": "tsx scripts/seed-docs.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -19,6 +20,7 @@
   "dependencies": {
     "@langchain/textsplitters": "^0.1.0",
     "@types/highlight.js": "^9.12.4",
+    "dotenv": "^17.2.1",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.4",
     "gray-matter": "^4.0.3",
@@ -31,7 +33,8 @@
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
     "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "tsx": "^4.20.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
