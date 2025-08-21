@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "highlight.js/styles/github.css";
 @import "highlight.js/styles/github-dark.css" (prefers-color-scheme: dark);
+@plugin "@tailwindcss/typography";
 
 :root {
   --background: #ffffff;
@@ -29,11 +30,11 @@ body {
 
 /* Custom styles for code blocks */
 .prose pre {
-  @apply bg-gray-100 dark:bg-gray-800 rounded-lg;
+  @apply bg-gray-100 dark:bg-gray-900 rounded-lg mt-0;
 }
 
 .prose code {
-  @apply bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm;
+  @apply bg-gray-100 dark:bg-gray-900 px-1 py-0.5 rounded text-sm;
 }
 
 .prose pre code {

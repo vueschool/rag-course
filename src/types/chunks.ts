@@ -4,6 +4,10 @@ export interface ChunkMetadata {
   documentTitle?: string;
   documentPageType?: string; // guide, reference, tutorial, etc.
   documentSidebar?: string;
+  title?: string;
+  url?: string;
+  section?: string;
+  nearestHeading?: string; // The nearest preceding heading for context
   chunkIndex: number;
   totalChunks: number;
   startLineNumber: number;

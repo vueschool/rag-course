@@ -21,6 +21,61 @@ function parseFrontmatter(content) {
 }
 
 /**
+ * Extract all headings from markdown content with their positions
+ */
+function extractHeadings(content) {
+  const headings = [];
+  const lines = content.split("\n");
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const text = headingMatch[2].trim();
+      const position = content.indexOf(
+        line,
+        content.split("\n").slice(0, i).join("\n").length
+      );
+
+      headings.push({
+        level,
+        text,
+        position,
+        lineNumber: i + 1,
+      });
+    }
+  }
+
+  return headings;
+}
+
+/**
+ * Find the nearest preceding heading for a chunk
+ */
+function findNearestHeading(chunkContent, parsedContent, headings) {
+  // Find where the chunk starts in the parsed content
+  const chunkStartInParsed = parsedContent.indexOf(chunkContent);
+
+  if (chunkStartInParsed === -1 || headings.length === 0) {
+    return null;
+  }
+
+  // Find the last heading that appears before this chunk
+  let nearestHeading = null;
+  for (const heading of headings) {
+    if (heading.position <= chunkStartInParsed) {
+      nearestHeading = heading;
+    } else {
+      break;
+    }
+  }
+
+  return nearestHeading ? nearestHeading.text : null;
+}
+
+/**
  * Calculate line numbers for a chunk within the original file (including frontmatter)
  */
 function calculateLineNumbers(rawContent, parsedContent, chunkContent) {
@@ -95,6 +150,9 @@ async function processMarkdownFile(filePath, textSplitter) {
     const { frontmatter, content } = parseFrontmatter(rawContent);
     const relativePath = path.relative(path.join(__dirname, ".."), filePath);
 
+    // Extract all headings from the content
+    const headings = extractHeadings(content);
+
     // Split content into chunks
     const chunks = await textSplitter.splitText(content);
 
@@ -107,6 +165,13 @@ async function processMarkdownFile(filePath, textSplitter) {
         chunkContent
       );
 
+      // Find the nearest preceding heading for this chunk
+      const nearestHeading = findNearestHeading(
+        chunkContent,
+        content,
+        headings
+      );
+
       return {
         content: chunkContent,
         metadata: {
@@ -115,6 +180,7 @@ async function processMarkdownFile(filePath, textSplitter) {
           documentTitle: frontmatter.title,
           documentPageType: frontmatter["page-type"],
           documentSidebar: frontmatter.sidebar,
+          nearestHeading,
           chunkIndex: index,
           totalChunks: chunks.length,
           startLineNumber,

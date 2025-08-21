@@ -4,6 +4,8 @@ export interface Citation {
   url: string;
   excerpt: string;
   section?: string;
+  documentSlug?: string;
+  nearestHeading?: string;
 }
 
 export interface Message {

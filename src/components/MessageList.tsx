@@ -1,6 +1,6 @@
 "use client";
 
-import { Message } from "@/types/chat";
+import { Message, Citation } from "@/types/chat";
 import MessageBubble from "./MessageBubble";
 import TypingIndicator from "./TypingIndicator";
 import { useEffect, useRef } from "react";
@@ -9,12 +9,14 @@ interface MessageListProps {
   messages: Message[];
   isLoading: boolean;
   error?: string;
+  onCitationClick?: (citation: Citation) => void;
 }
 
 export default function MessageList({
   messages,
   isLoading,
   error,
+  onCitationClick,
 }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -27,12 +29,18 @@ export default function MessageList({
   }, [messages, isLoading]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex-1 overflow-y-auto h-full p-4 space-y-4">
       {messages.map((message) => (
-        <MessageBubble key={message.id} message={message} />
+        <MessageBubble
+          key={message.id}
+          message={message}
+          onCitationClick={onCitationClick}
+        />
       ))}
 
-      {isLoading && <TypingIndicator />}
+      {isLoading &&
+        !messages.at(-1)?.content &&
+        !messages.at(-1)?.citations?.length && <TypingIndicator />}
 
       {error && (
         <div className="mx-auto max-w-2xl">

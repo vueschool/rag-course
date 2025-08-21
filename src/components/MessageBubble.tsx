@@ -1,20 +1,29 @@
 "use client";
 
-import { Message } from "@/types/chat";
+import { Message, Citation } from "@/types/chat";
 import { Copy, User, Bot } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import rehypeHighlight from "rehype-highlight";
-import remarkGfm from "remark-gfm";
 import { useState } from "react";
-import CitationInline from "./CitationInline";
+import MarkdownRenderer from "./MarkdownRenderer";
 
 interface MessageBubbleProps {
   message: Message;
+  onCitationClick?: (citation: Citation) => void;
 }
 
-export default function MessageBubble({ message }: MessageBubbleProps) {
+export default function MessageBubble({
+  message,
+  onCitationClick,
+}: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === "user";
+
+  // Don't render empty messages (they should show TypingIndicator instead)
+  if (
+    !message.content.trim() &&
+    (!message.citations || message.citations.length === 0)
+  ) {
+    return null;
+  }
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -45,38 +54,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           {isUser ? (
             <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeHighlight]}
-                components={{
-                  code: ({ inline, className, children, ...props }) => {
-                    const match = /language-(\w+)/.exec(className || "");
-                    return !inline && match ? (
-                      <div className="relative">
-                        <pre className={className} {...props}>
-                          <code>{children}</code>
-                        </pre>
-                        <button
-                          onClick={() =>
-                            navigator.clipboard.writeText(String(children))
-                          }
-                          className="absolute top-2 right-2 p-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 hover:text-white text-xs"
-                          title="Copy code"
-                        >
-                          <Copy className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <code className={className} {...props}>
-                        {children}
-                      </code>
-                    );
-                  },
-                }}
-              >
-                {message.content}
-              </ReactMarkdown>
+            <div>
+              <MarkdownRenderer content={message.content} />
 
               {/* Display citations */}
               {message.citations && message.citations.length > 0 && (
@@ -84,13 +63,25 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-medium">
                     Sources:
                   </p>
-                  <div className="space-y-1">
+                  <div className="flex flex-wrap gap-2">
                     {message.citations.map((citation, index) => (
-                      <CitationInline
+                      <button
                         key={citation.id}
-                        citation={citation}
-                        number={index + 1}
-                      />
+                        onClick={() => onCitationClick?.(citation)}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                      >
+                        <span className="w-4 h-4 bg-blue-600 dark:bg-blue-400 text-white dark:text-gray-900 rounded-full flex items-center justify-center text-[10px] font-medium">
+                          {index + 1}
+                        </span>
+                        <span className="flex flex-col items-start">
+                          <span className="font-medium">{citation.title}</span>
+                          {citation.nearestHeading && (
+                            <span className="text-[10px] opacity-75 italic">
+                              § {citation.nearestHeading}
+                            </span>
+                          )}
+                        </span>
+                      </button>
                     ))}
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatState } from "@/types/chat";
+import { ChatState, Citation } from "@/types/chat";
 import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
 import CitationPanel from "./CitationPanel";
@@ -15,16 +15,9 @@ export default function ChatContainer({
   chatState,
   onSendMessage,
 }: ChatContainerProps) {
-  const [showCitations, setShowCitations] = useState(true);
-
-  // Get all unique citations from the current conversation
-  const allCitations = chatState.messages
-    .filter((message) => message.citations && message.citations.length > 0)
-    .flatMap((message) => message.citations!)
-    .filter(
-      (citation, index, self) =>
-        index === self.findIndex((c) => c.id === citation.id)
-    );
+  const [selectedCitation, setSelectedCitation] = useState<Citation | null>(
+    null
+  );
 
   return (
     <div className="flex w-full h-full">
@@ -41,24 +34,24 @@ export default function ChatContainer({
                 Get answers about web technologies with citations from MDN docs
               </p>
             </div>
-            {allCitations.length > 0 && (
+            {selectedCitation && (
               <button
-                onClick={() => setShowCitations(!showCitations)}
+                onClick={() => setSelectedCitation(null)}
                 className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
               >
-                {showCitations ? "Hide" : "Show"} Citations (
-                {allCitations.length})
+                Close Source Panel
               </button>
             )}
           </div>
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0">
           <MessageList
             messages={chatState.messages}
             isLoading={chatState.isLoading}
             error={chatState.error}
+            onCitationClick={setSelectedCitation}
           />
         </div>
 
@@ -72,9 +65,9 @@ export default function ChatContainer({
       </div>
 
       {/* Citation Panel */}
-      {showCitations && allCitations.length > 0 && (
+      {selectedCitation && (
         <div className="w-80 border-l border-gray-200 dark:border-gray-700">
-          <CitationPanel citations={allCitations} />
+          <CitationPanel citation={selectedCitation} />
         </div>
       )}
     </div>
