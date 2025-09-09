@@ -2,16 +2,20 @@
   "name": "rag-course-2",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "chunk-docs": "tsx scripts/chunk-docs.ts"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.16",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.1",
+    "gray-matter": "^4.0.3",
+    "langchain": "^0.3.31",
     "llama-cloud-services": "^0.3.3",
     "lucide-react": "^0.540.0",
     "next": "15.5.0",
