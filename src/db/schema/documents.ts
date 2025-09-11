@@ -1,19 +1,14 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-  integer,
-  vector,
-} from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer } from "drizzle-orm/pg-core";
 
 export const documents = pgTable("documents", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: text("title").notNull(),
-  content: text("content").notNull(),
-  source: text("source"),
-  chunkIndex: integer("chunk_index"),
-  embedding: vector("embedding", { dimensions: 1536 }), // Will add this after enabling pgvector
+  slug: text("slug"),
+  sourceFilePath: text("source_file_path").notNull(),
+  pageType: text("page_type"),
+  sidebar: text("sidebar"),
+  totalChunks: integer("total_chunks").notNull().default(0),
+  processedAt: timestamp("processed_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

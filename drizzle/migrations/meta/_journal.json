@@ -15,6 +15,13 @@
       "when": 1757622095796,
       "tag": "0001_dark_mulholland_black",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1757624814632,
+      "tag": "0002_right_randall_flagg",
+      "breakpoints": true
     }
   ]
 }
