@@ -22,7 +22,7 @@ export const chunks = pgTable("chunks", {
   headingLineNumber: integer("heading_line_number"),
   characterCount: integer("character_count").notNull(),
   wordCount: integer("word_count").notNull(),
-  embedding: vector("embedding", { dimensions: 1536 }),
+  embedding: vector("embedding", { dimensions: 1024 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
