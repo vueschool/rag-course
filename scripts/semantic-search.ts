@@ -12,7 +12,7 @@ config();
 // Initialize Voyage AI provider
 const voyageProvider = createVoyage();
 
-interface SearchResult {
+export interface SearchResult {
   chunkId: string;
   documentTitle: string;
   content: string;
