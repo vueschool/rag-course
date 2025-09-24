@@ -58,73 +58,61 @@ export function Chat() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input.trim();
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response with streaming
-    setTimeout(() => {
+    try {
+      // Call the RAG API
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: currentInput,
+          limit: 5,
+          threshold: 0.5,
+          model: "gpt-4o-mini",
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to get response");
+      }
+
+      const data = await response.json();
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "ai",
-        content: `# Understanding ${input.trim()}
-
-Here's what you need to know about **${input.trim()}**:
-
-## Overview
-This is a comprehensive explanation that demonstrates \`inline code\` and other formatting features.
-
-\`\`\`javascript
-// Example code block
-function example() {
-  console.log("Hello from MDN documentation!");
-  return true;
-}
-\`\`\`
-
-## Key Points
-1. First important point with [citation](1)
-2. Second point that references [MDN docs](2)
-3. Third point about best practices
-
-The information above is sourced from official MDN documentation [3].`,
+        content: data.content,
         timestamp: new Date(),
-        isStreaming: true,
-        sources: [
-          {
-            id: "1",
-            title: "JavaScript Fundamentals - MDN",
-            snippet:
-              "JavaScript is a programming language that allows you to implement complex features on web pages.",
-            url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
-          },
-          {
-            id: "2",
-            title: "Web APIs - MDN",
-            snippet:
-              "Web APIs provide functionality for developing Web applications.",
-            url: "https://developer.mozilla.org/en-US/docs/Web/API",
-          },
-          {
-            id: "3",
-            title: "Best Practices - MDN",
-            snippet: "Learn about best practices for web development.",
-            url: "https://developer.mozilla.org/en-US/docs/Learn",
-          },
-        ],
+        sources: data.sources,
+        isStreaming: false,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Chat error:", error);
 
-      // Simulate streaming completion
-      setTimeout(() => {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === aiMessage.id ? { ...msg, isStreaming: false } : msg
-          )
-        );
-      }, 2000);
-    }, 1000);
+      // Show error message to user
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: "ai",
+        content: `I apologize, but I encountered an error while processing your question: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }. Please try again.`,
+        timestamp: new Date(),
+        sources: [],
+        isStreaming: false,
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

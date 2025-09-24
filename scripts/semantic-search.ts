@@ -21,6 +21,7 @@ export interface SearchResult {
   characterCount: number;
   wordCount: number;
   sourceFilePath: string;
+  documentSlug: string | null;
 }
 
 /**
@@ -65,6 +66,7 @@ async function searchSimilarChunks(
         characterCount: chunks.characterCount,
         wordCount: chunks.wordCount,
         sourceFilePath: documents.sourceFilePath,
+        documentSlug: documents.slug,
         similarity: sql<number>`1 - (${chunks.embedding} <=> ${JSON.stringify(
           questionEmbedding
         )})`,
@@ -113,6 +115,7 @@ function displayResults(results: SearchResult[], question: string): void {
     console.log(`\n📄 RESULT ${index + 1}:`);
     console.log(`   📋 Document: ${result.documentTitle}`);
     console.log(`   📁 Source: ${result.sourceFilePath}`);
+    console.log(`   🔗 Slug: ${result.documentSlug || "N/A"}`);
     console.log(`   🎯 Similarity: ${(result.similarity * 100).toFixed(2)}%`);
     console.log(
       `   📏 Length: ${result.characterCount} chars, ${result.wordCount} words`

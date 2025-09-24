@@ -22,6 +22,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.32",
     "@tailwindcss/typography": "^0.5.16",
+    "@types/slug": "^5.0.9",
     "ai": "^5.0.45",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.1",
@@ -38,6 +39,7 @@
     "react-syntax-highlighter": "^15.6.1",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
+    "slug": "^11.0.0",
     "voyage-ai-provider": "^2.0.0"
   },
   "devDependencies": {
