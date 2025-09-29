@@ -1,6 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { AppUIMessage } from "@/app/helpers/aiMessage";
+
 import {
   Send,
   RotateCcw,
@@ -10,6 +14,7 @@ import {
 } from "lucide-react";
 import { clsx } from "clsx";
 import { Message, ChatMessage } from "./ChatMessage";
+import { ChatMessageLoading } from "./ChatMessageLoading";
 import { ContextPanel } from "./ContextPanel";
 import { ExportDialog } from "./ExportDialog";
 
@@ -30,13 +35,45 @@ export interface ChatMessage {
 }
 
 export function Chat() {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isContextPanelOpen, setIsContextPanelOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const { messages, sendMessage, status, setMessages } = useChat<AppUIMessage>({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+    }),
+  });
+
+  // Convert useChat messages to our Message format
+  const chatMessages: Message[] = messages.map((msg) => {
+    const isDone = Boolean(
+      msg?.parts?.find((part) => part.type === "text" && part.state === "done")
+    );
+
+    return {
+      id: msg.id,
+      type: msg.role === "user" ? "user" : "ai",
+      content:
+        msg.parts
+          ?.filter((part) => part.type === "text")
+          .map((part) => ("text" in part ? part.text : ""))
+          .join("") || "",
+      timestamp: msg.metadata?.createdAt
+        ? new Date(msg.metadata.createdAt)
+        : null,
+      sources: isDone
+        ? msg.parts?.find((part) => {
+            return (
+              part?.type === "tool-queryKnowledgeBase" &&
+              part?.state === "output-available"
+            );
+          })?.output || []
+        : [],
+    };
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -44,75 +81,16 @@ export function Chat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [chatMessages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || status !== "ready") return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: "user",
-      content: input.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
     const currentInput = input.trim();
     setInput("");
-    setIsLoading(true);
 
-    try {
-      // Call the RAG API
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: currentInput,
-          limit: 5,
-          threshold: 0.5,
-          model: "gpt-4o-mini",
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to get response");
-      }
-
-      const data = await response.json();
-
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: "ai",
-        content: data.content,
-        timestamp: new Date(),
-        sources: data.sources,
-        isStreaming: false,
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      console.error("Chat error:", error);
-
-      // Show error message to user
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: "ai",
-        content: `I apologize, but I encountered an error while processing your question: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }. Please try again.`,
-        timestamp: new Date(),
-        sources: [],
-        isStreaming: false,
-      };
-
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
+    sendMessage({ text: currentInput, metadata: { createdAt: Date.now() } });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -133,6 +111,7 @@ export function Chat() {
   return (
     <div className="flex h-screen bg-[#0f0f23] text-white">
       {/* Main Chat Area */}
+
       <div
         className={clsx(
           "flex flex-col transition-all duration-300",
@@ -171,7 +150,7 @@ export function Chat() {
               onClick={() => setIsExportDialogOpen(true)}
               className="p-2 rounded-lg hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
               aria-label="Export conversation"
-              disabled={messages.length === 0}
+              disabled={chatMessages.length === 0}
             >
               <Download className="w-5 h-5" />
             </button>
@@ -189,7 +168,7 @@ export function Chat() {
 
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.length === 0 ? (
+          {chatMessages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-center">
               <div className="max-w-md">
                 <h2 className="text-2xl font-semibold mb-4 text-gray-200">
@@ -230,25 +209,12 @@ export function Chat() {
               </div>
             </div>
           ) : (
-            messages.map((message) => (
+            chatMessages.map((message) => (
               <ChatMessage key={message.id} message={message} />
             ))
           )}
 
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-800 rounded-lg p-4 max-w-4xl">
-                <div className="flex items-center gap-2 text-gray-400">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse [animation-delay:0.4s]"></div>
-                  </div>
-                  <span className="text-sm">AI is thinking...</span>
-                </div>
-              </div>
-            </div>
-          )}
+          {status === "submitted" && <ChatMessageLoading />}
 
           <div ref={messagesEndRef} />
         </div>
@@ -265,11 +231,11 @@ export function Chat() {
                 placeholder="Ask me about web development, JavaScript, CSS, HTML..."
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 pr-12 text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none min-h-[50px] max-h-32"
                 rows={1}
-                disabled={isLoading}
+                disabled={status !== "ready"}
               />
               <button
                 type="submit"
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || status !== "ready"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                 aria-label="Send message"
               >
@@ -287,7 +253,7 @@ export function Chat() {
       {/* Context Panel */}
       {isContextPanelOpen && (
         <ContextPanel
-          sources={messages
+          sources={chatMessages
             .filter((m) => m.type === "ai" && m.sources)
             .flatMap((m) => m.sources || [])}
         />
@@ -296,7 +262,7 @@ export function Chat() {
       {/* Export Dialog */}
       {isExportDialogOpen && (
         <ExportDialog
-          messages={messages}
+          messages={chatMessages}
           onClose={() => setIsExportDialogOpen(false)}
         />
       )}

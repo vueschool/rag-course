@@ -47,9 +47,10 @@ function formatContextFromChunks(chunks: SearchResult[]): string {
 }
 
 /**
- * Create a prompt that combines the user's question with retrieved context
+ * Create a system prompt for the RAG query
+ * @returns {string}
  */
-function createRAGPrompt(question: string, context: string): string {
+function createRAGSystemPrompt(): string {
   return `You are a helpful AI assistant that answers questions based on the provided context documents. Please follow these guidelines:
 
 1. Answer the question using primarily the information from the provided context documents
@@ -57,7 +58,14 @@ function createRAGPrompt(question: string, context: string): string {
 3. Be specific and cite which documents you're referencing when possible
 4. If the context is contradictory or unclear, acknowledge this
 5. Keep your answer concise but comprehensive
-6. Use markdown formatting for better readability
+6. Use markdown formatting for better readability`;
+}
+
+/**
+ * Create a prompt that combines the user's question with retrieved context
+ */
+function createRAGPrompt(question: string, context: string): string {
+  return `${createRAGSystemPrompt()}
 
 Context Documents:
 ${context}
@@ -290,4 +298,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 // Export for potential use as a module
-export { performRAGQuery, formatContextFromChunks, createRAGPrompt, queryLLM };
+export {
+  performRAGQuery,
+  formatContextFromChunks,
+  createRAGPrompt,
+  queryLLM,
+  createRAGSystemPrompt,
+};

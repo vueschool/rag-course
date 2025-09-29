@@ -26,7 +26,7 @@ export function ExportDialog({ messages, onClose }: ExportDialogProps) {
 
       messages.forEach((message, index) => {
         const role = message.type === "user" ? "User" : "AI Assistant";
-        const time = message.timestamp.toLocaleTimeString();
+        const time = message.timestamp?.toLocaleTimeString();
 
         content += `## ${role} (${time})\n\n`;
         content += `${message.content}\n\n`;
@@ -52,7 +52,7 @@ export function ExportDialog({ messages, onClose }: ExportDialogProps) {
 
       messages.forEach((message, index) => {
         const role = message.type === "user" ? "User" : "AI Assistant";
-        const time = message.timestamp.toLocaleTimeString();
+        const time = message.timestamp?.toLocaleTimeString();
 
         content += `${role} (${time})\n`;
         content += `${"-".repeat(20)}\n`;

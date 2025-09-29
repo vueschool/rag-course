@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -8,6 +8,7 @@ import { Copy, Check, ExternalLink, User, Bot } from "lucide-react";
 import { clsx } from "clsx";
 import remarkGfm from "remark-gfm";
 import { CitationTooltip } from "./CitationTooltip";
+import { ChatMessageLoading } from "./ChatMessageLoading";
 
 export interface ChatSource {
   id: string;
@@ -20,9 +21,8 @@ export interface Message {
   id: string;
   type: "user" | "ai";
   content: string;
-  timestamp: Date;
+  timestamp: Date | null;
   sources?: ChatSource[];
-  isStreaming?: boolean;
 }
 
 interface ChatMessageProps {
@@ -92,46 +92,11 @@ function CodeBlock({ children, className, inline }: CodeBlockProps) {
   );
 }
 
-function StreamingText({
-  content,
-  isStreaming,
-}: {
-  content: string;
-  isStreaming: boolean;
-}) {
-  const [displayedContent, setDisplayedContent] = useState("");
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    if (!isStreaming) {
-      setDisplayedContent(content);
-      return;
-    }
-
-    if (currentIndex < content.length) {
-      const timer = setTimeout(() => {
-        setDisplayedContent(content.slice(0, currentIndex + 1));
-        setCurrentIndex(currentIndex + 1);
-      }, 20); // Adjust speed as needed
-
-      return () => clearTimeout(timer);
-    }
-  }, [content, isStreaming, currentIndex]);
-
-  return (
-    <div className="relative">
-      {displayedContent}
-      {isStreaming && currentIndex < content.length && (
-        <span className="animate-pulse text-purple-400">|</span>
-      )}
-    </div>
-  );
-}
-
 function processCitations(
   content: string,
   sources?: ChatSource[]
 ): React.ReactNode[] {
+  console.log("sources", sources);
   if (!sources || sources.length === 0) {
     return [content];
   }
@@ -180,7 +145,7 @@ function processCitations(
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.type === "user";
 
-  return (
+  return message.content ? (
     <div
       className={clsx("flex gap-4", isUser ? "justify-end" : "justify-start")}
     >
@@ -205,24 +170,10 @@ export function ChatMessage({ message }: ChatMessageProps) {
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                code: ({
-                  node,
-                  inline,
-                  className,
-                  children,
-                  ...props
-                }: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                code: ({ className, children, ...props }: any) => {
                   const content = String(children).replace(/\n$/, "");
-
-                  if (message.isStreaming) {
-                    return inline ? (
-                      <StreamingText content={content} isStreaming={true} />
-                    ) : (
-                      <div className="my-4">
-                        <StreamingText content={content} isStreaming={true} />
-                      </div>
-                    );
-                  }
+                  const inline = !String(children).includes("\n");
 
                   return (
                     <CodeBlock inline={inline} className={className} {...props}>
@@ -231,16 +182,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
                   );
                 },
                 p: ({ children }) => {
-                  if (message.isStreaming) {
-                    const content =
-                      typeof children === "string"
-                        ? children
-                        : React.Children.toArray(children).join("");
-                    return (
-                      <StreamingText content={content} isStreaming={true} />
-                    );
-                  }
-
                   // Process citations for regular paragraphs
                   const processedChildren = React.Children.map(
                     children,
@@ -326,49 +267,48 @@ export function ChatMessage({ message }: ChatMessageProps) {
         )}
 
         {/* Sources */}
-        {!isUser &&
-          message.sources &&
-          message.sources.length > 0 &&
-          !message.isStreaming && (
-            <div className="mt-4 pt-4 border-t border-gray-700">
-              <h4 className="text-sm font-semibold text-gray-300 mb-2">
-                Sources:
-              </h4>
-              <div className="grid gap-2">
-                {message.sources.map((source, index) => (
-                  <a
-                    key={source.id}
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block p-2 bg-gray-900 rounded border border-gray-700 hover:border-purple-500 transition-colors group"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-mono">
-                            {index + 1}
-                          </span>
-                          <h5 className="font-medium text-sm text-white truncate group-hover:text-purple-300">
-                            {source.title}
-                          </h5>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">
-                          {source.snippet}
-                        </p>
+        {!isUser && message.sources && message.sources.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">
+              Sources:
+            </h4>
+            <div className="grid gap-2">
+              {message.sources.map((source, index) => (
+                <a
+                  key={source.id}
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-2 bg-gray-900 rounded border border-gray-700 hover:border-purple-500 transition-colors group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-mono">
+                          {index + 1}
+                        </span>
+                        <h5 className="font-medium text-sm text-white truncate group-hover:text-purple-300">
+                          {source.title}
+                        </h5>
                       </div>
-                      <ExternalLink className="w-3 h-3 text-gray-500 group-hover:text-purple-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                        {source.snippet}
+                      </p>
                     </div>
-                  </a>
-                ))}
-              </div>
+                    <ExternalLink className="w-3 h-3 text-gray-500 group-hover:text-purple-400 flex-shrink-0 mt-0.5" />
+                  </div>
+                </a>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
         {/* Timestamp */}
-        <div className="mt-3 text-xs text-gray-500">
-          {message.timestamp.toLocaleTimeString()}
-        </div>
+        {message.timestamp && (
+          <div className="mt-3 text-xs opacity-70">
+            {message.timestamp.toLocaleTimeString()}
+          </div>
+        )}
       </div>
 
       {isUser && (
@@ -377,5 +317,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </div>
       )}
     </div>
+  ) : (
+    <ChatMessageLoading />
   );
 }
