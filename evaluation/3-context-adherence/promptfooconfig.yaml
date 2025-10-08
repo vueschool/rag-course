@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: "Evaluation of the retrieval system"
+# Optionally set API keys here instead of exporting environment variables.
+# Never commit real keys to source control.
+# env:
+#   OPENAI_API_KEY: sk-...
+prompts:
+  - "{{ query }}"
+
+providers:
+  - file://provider.ts
+
+tests:
+  - vars:
+      query: What prereqs should I have before studying JavaScript?
+    assert:
+      - type: context-faithfulness
+        transform: "output.answer"
+        contextTransform: "output.context"
+        value: |
+          - A general understanding of the Internet and the World Wide Web (WWW)
+          - Good working knowledge of HyperText Markup Language (HTML)
+          - Some programming experience.
+        threshold: 0.9 # Require 90% of claims to be supported

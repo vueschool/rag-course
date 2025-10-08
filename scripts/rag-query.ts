@@ -58,7 +58,8 @@ function createRAGSystemPrompt(): string {
 3. Be specific and cite which documents you're referencing when possible
 4. If the context is contradictory or unclear, acknowledge this
 5. Keep your answer concise but comprehensive
-6. Use markdown formatting for better readability`;
+6. Use markdown formatting for better readability
+7. Stick to the provided context as closely as possible and do NOT add any other information`;
 }
 
 /**
