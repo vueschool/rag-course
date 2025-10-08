@@ -1,9 +1,4 @@
-import {
-  streamText,
-  type UIMessage,
-  convertToModelMessages,
-  stepCountIs,
-} from "ai";
+import { streamText, convertToModelMessages, stepCountIs } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { createRAGSystemPrompt } from "@/../scripts/rag-query";
 import { aiTools } from "@/app/helpers/aiTools";

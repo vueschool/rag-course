@@ -35,7 +35,7 @@ export function ExportDialog({ messages, onClose }: ExportDialogProps) {
           content += `### Sources\n\n`;
           message.sources.forEach((source, sourceIndex) => {
             content += `${sourceIndex + 1}. [${source.title}](${source.url})\n`;
-            content += `   ${source.snippet}\n\n`;
+            content += `   ${source.content.substring(0, 100)}...\n\n`;
           });
         }
 
@@ -62,7 +62,7 @@ export function ExportDialog({ messages, onClose }: ExportDialogProps) {
           content += `Sources:\n`;
           message.sources.forEach((source, sourceIndex) => {
             content += `${sourceIndex + 1}. ${source.title}\n`;
-            content += `   ${source.snippet}\n`;
+            content += `   ${source.content.substring(0, 100)}...\n`;
             content += `   ${source.url}\n\n`;
           });
         }

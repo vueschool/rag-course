@@ -53,7 +53,7 @@ export function ContextPanel({ sources }: ContextPanelProps) {
                     </h3>
 
                     <p className="text-xs text-gray-400 leading-relaxed mb-3">
-                      {source.snippet}
+                      {source.content.substring(0, 100)}...
                     </p>
 
                     <div className="flex items-center justify-between">
@@ -99,4 +99,3 @@ export function ContextPanel({ sources }: ContextPanelProps) {
     </div>
   );
 }
-

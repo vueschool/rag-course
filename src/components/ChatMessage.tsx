@@ -13,7 +13,7 @@ import { ChatMessageLoading } from "./ChatMessageLoading";
 export interface ChatSource {
   id: string;
   title: string;
-  snippet: string;
+  content: string;
   url: string;
 }
 
@@ -292,7 +292,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                         </h5>
                       </div>
                       <p className="text-xs text-gray-400 mt-1 line-clamp-2">
-                        {source.snippet}
+                        {source.content.substring(0, 100)}...
                       </p>
                     </div>
                     <ExternalLink className="w-3 h-3 text-gray-500 group-hover:text-purple-400 flex-shrink-0 mt-0.5" />

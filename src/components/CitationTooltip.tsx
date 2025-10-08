@@ -135,7 +135,7 @@ export function CitationTooltip({
               </div>
 
               <p className="text-sm text-gray-300 leading-relaxed">
-                {source.snippet}
+                {source.content.substring(0, 100)}...
               </p>
 
               <div className="pt-2 border-t border-gray-700">
@@ -160,4 +160,3 @@ export function CitationTooltip({
     </>
   );
 }
-

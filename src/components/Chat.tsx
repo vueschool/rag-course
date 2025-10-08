@@ -21,7 +21,7 @@ import { ExportDialog } from "./ExportDialog";
 export interface ChatSource {
   id: string;
   title: string;
-  snippet: string;
+  content: string;
   url: string;
 }
 
