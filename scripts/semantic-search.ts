@@ -146,9 +146,9 @@ function displayResults(results: SearchResult[], question: string): void {
  */
 async function performSemanticSearch(
   question: string,
-  limit: number = 5,
-  similarityThreshold: number = 0.5
+  limit: number = 5
 ): Promise<SearchResult[]> {
+  const similarityThreshold = 0.7;
   console.log("🚀 Starting semantic search...\n");
 
   // Validate environment variable
@@ -188,7 +188,6 @@ async function main(): Promise<void> {
 
   let question: string;
   let limit: number = 5;
-  let similarityThreshold: number = 0.5;
 
   // Parse command line arguments
   if (args.length === 0) {
@@ -211,14 +210,9 @@ async function main(): Promise<void> {
 
     // Parse optional parameters
     const limitArg = args.find((arg) => arg.startsWith("--limit="));
-    const thresholdArg = args.find((arg) => arg.startsWith("--threshold="));
 
     if (limitArg) {
       limit = parseInt(limitArg.split("=")[1]) || 5;
-    }
-
-    if (thresholdArg) {
-      similarityThreshold = parseFloat(thresholdArg.split("=")[1]) || 0.5;
     }
   }
 
@@ -235,12 +229,9 @@ async function main(): Promise<void> {
 
   console.log(`Question: "${question}"`);
   console.log(`Limit: ${limit} results`);
-  console.log(
-    `Similarity threshold: ${(similarityThreshold * 100).toFixed(0)}%\n`
-  );
 
   // Perform the search
-  await performSemanticSearch(question, limit, similarityThreshold);
+  await performSemanticSearch(question, limit);
 }
 
 // Run the script

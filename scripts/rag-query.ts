@@ -5,6 +5,7 @@ import { performSemanticSearch } from "./semantic-search";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { SearchResult } from "./semantic-search";
+import { generateMDNUrl } from "../src/app/helpers/general";
 
 config();
 
@@ -27,23 +28,25 @@ function formatContextFromChunks(chunks: SearchResult[]): string {
     return "No relevant context found.";
   }
 
-  let context =
-    "Here are the relevant documents to help answer the question:\n\n";
-
-  chunks.forEach((chunk, index) => {
-    context += `<document index="${index + 1}">\n`;
-    context += `  <title>${chunk.documentTitle}</title>\n`;
-    if (chunk.headingContext) {
-      context += `  <section>${chunk.headingContext}</section>\n`;
-    }
-    context += `  <similarity>${(chunk.similarity * 100).toFixed(
-      1
-    )}%</similarity>\n`;
-    context += `  <content><![CDATA[${chunk.content}]]></content>\n`;
-    context += `</document>\n\n`;
-  });
-
+  const context = `Here are the relevant documents to help answer the question:\n\n
+    <context>
+    ${JSON.stringify(transformChunksForFrontend(chunks))}
+    </context>
+    `;
   return context;
+}
+
+export function transformChunksForFrontend(chunks: SearchResult[]) {
+  return chunks.map((source, index) => ({
+    id: String(index + 1),
+    citationNumber: index + 1,
+    title: source.documentTitle,
+    url: generateMDNUrl(source.documentSlug, source.headingContext),
+    similarity: source.similarity,
+    sourceFilePath: source.sourceFilePath,
+    chunkId: source.chunkId,
+    content: source.content,
+  }));
 }
 
 /**
@@ -59,7 +62,8 @@ function createRAGSystemPrompt(): string {
 4. If the context is contradictory or unclear, acknowledge this
 5. Keep your answer concise but comprehensive
 6. Use markdown formatting for better readability
-7. Stick to the provided context as closely as possible and do NOT add any other information`;
+7. Stick to the provided context as closely as possible and do NOT add any other information
+8. Always include a link to referenced context document (it's url)`;
 }
 
 /**
@@ -147,23 +151,13 @@ async function performRAGQuery(
   question: string,
   options: {
     limit?: number;
-    similarityThreshold?: number;
     model?: string;
   } = {}
 ): Promise<RAGResponse> {
-  const {
-    limit = 5,
-    similarityThreshold = 0.5,
-    model = "gpt-4o-mini",
-  } = options;
+  const { limit = 5, model = "gpt-4o-mini" } = options;
 
   console.log("🚀 Starting RAG query...\n");
   console.log(`📝 Question: "${question}"`);
-  console.log(
-    `🔍 Retrieving up to ${limit} relevant chunks (threshold: ${(
-      similarityThreshold * 100
-    ).toFixed(0)}%)`
-  );
   console.log(`🤖 Using model: ${model}\n`);
 
   // Validate environment variables
@@ -183,11 +177,7 @@ async function performRAGQuery(
 
   try {
     // Step 1: Retrieve relevant chunks using semantic search
-    const retrievedChunks = await performSemanticSearch(
-      question,
-      limit,
-      similarityThreshold
-    );
+    const retrievedChunks = await performSemanticSearch(question, limit);
 
     if (retrievedChunks.length === 0) {
       return {
@@ -225,7 +215,6 @@ async function main(): Promise<void> {
 
   let question: string;
   let limit: number = 5;
-  let similarityThreshold: number = 0.5;
   let model: string = "gpt-4o-mini";
 
   // Parse command line arguments
@@ -249,15 +238,10 @@ async function main(): Promise<void> {
 
     // Parse optional parameters
     const limitArg = args.find((arg) => arg.startsWith("--limit="));
-    const thresholdArg = args.find((arg) => arg.startsWith("--threshold="));
     const modelArg = args.find((arg) => arg.startsWith("--model="));
 
     if (limitArg) {
       limit = parseInt(limitArg.split("=")[1]) || 5;
-    }
-
-    if (thresholdArg) {
-      similarityThreshold = parseFloat(thresholdArg.split("=")[1]) || 0.5;
     }
 
     if (modelArg) {
@@ -270,7 +254,7 @@ async function main(): Promise<void> {
     console.log("Usage:");
     console.log('  tsx scripts/rag-query.ts "your question here"');
     console.log(
-      '  tsx scripts/rag-query.ts "your question" --limit=10 --threshold=0.6 --model=gpt-4'
+      '  tsx scripts/rag-query.ts "your question" --limit=10 --model=gpt-4'
     );
     console.log("  tsx scripts/rag-query.ts  (for interactive mode)");
     console.log(
@@ -282,7 +266,6 @@ async function main(): Promise<void> {
   // Perform the RAG query
   const response = await performRAGQuery(question, {
     limit,
-    similarityThreshold,
     model,
   });
 
