@@ -8,6 +8,7 @@ import { embedMany } from "ai";
 import { createVoyage } from "voyage-ai-provider";
 import { config } from "dotenv";
 import { isNull } from "drizzle-orm";
+import { generateContextForChunk } from "./contextualizer";
 config();
 
 interface ChunkMetadata {
@@ -224,6 +225,51 @@ async function generateEmbeddingsForChunks(
   }
 }
 
+const documentsCache = new Map<string, string>();
+async function generateContextsForChunks(
+  chunks: ChunkData[]
+): Promise<
+  { context: string; chunkContentPrefixed: string; chunk: ChunkData }[]
+> {
+  // Batch chunks for generateContextForChunk to reduce parallel calls and file reads
+  const BATCH_SIZE = 10;
+  const batchedChunks: ChunkData[][] = [];
+  for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+    batchedChunks.push(chunks.slice(i, i + BATCH_SIZE));
+  }
+
+  const chunksWithContexts: {
+    context: string;
+    chunkContentPrefixed: string;
+    chunk: ChunkData;
+  }[] = [];
+
+  for (const chunkBatch of batchedChunks) {
+    const batchResults = await Promise.all(
+      chunkBatch.map(async (chunk) => {
+        const filePath = chunk.metadata.filePath;
+        let documentContent = documentsCache.get(filePath);
+        if (!documentContent) {
+          documentContent = await fs.readFile(filePath, "utf-8");
+          documentsCache.set(filePath, documentContent);
+        }
+        const context = await generateContextForChunk(
+          documentContent,
+          chunk.content
+        );
+        return {
+          context,
+          chunkContentPrefixed: context + " " + chunk.content,
+          chunk,
+        };
+      })
+    );
+    chunksWithContexts.push(...batchResults);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  return chunksWithContexts;
+}
+
 async function seedDatabase() {
   console.log("🌱 Starting database seeding with incremental processing...\n");
 
@@ -304,9 +350,12 @@ async function seedDatabase() {
 
     for (let i = 0; i < chunksToProcess.length; i += batchSize) {
       const batch = chunksToProcess.slice(i, i + batchSize);
+      const chunksWithContext = await generateContextsForChunks(batch);
 
       // Extract text content from batch for embedding generation
-      const textsForEmbedding = batch.map((chunk) => chunk.content);
+      const textsForEmbedding = chunksWithContext.map(
+        (chunkWithContext) => chunkWithContext.chunkContentPrefixed
+      );
 
       // Generate embeddings for this batch
       const embeddings = await generateEmbeddingsForChunks(textsForEmbedding);
@@ -314,6 +363,7 @@ async function seedDatabase() {
       // Process each chunk in the batch
       for (let j = 0; j < batch.length; j++) {
         const chunk = batch[j];
+        const chunkWithContext = chunksWithContext[j];
         const embedding = embeddings[j];
         const documentId = analysis.documentIdMap.get(chunk.metadata.source);
 
@@ -327,6 +377,7 @@ async function seedDatabase() {
         const chunkData = {
           id: chunk.id,
           documentId,
+          contextPrefix: chunkWithContext.context,
           content: chunk.content,
           chunkIndex: chunk.metadata.chunkIndex,
           startLine: chunk.metadata.startLine || null,
