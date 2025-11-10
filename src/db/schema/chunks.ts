@@ -5,8 +5,16 @@ import {
   uuid,
   integer,
   vector,
+  customType,
 } from "drizzle-orm/pg-core";
 import { documents } from "./documents";
+
+// Define tsvector custom type
+const tsvector = customType<{ data: string; driverData: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
 
 export const chunks = pgTable("chunks", {
   id: text("id").primaryKey(), // e.g., "mdn-docs/closures/index.md_chunk_0"
@@ -23,6 +31,7 @@ export const chunks = pgTable("chunks", {
   characterCount: integer("character_count").notNull(),
   wordCount: integer("word_count").notNull(),
   embedding: vector("embedding", { dimensions: 1024 }),
+  searchVector: tsvector("search_vector"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

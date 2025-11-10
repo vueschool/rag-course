@@ -63,7 +63,10 @@ function createRAGSystemPrompt(): string {
 5. Keep your answer concise but comprehensive
 6. Use markdown formatting for better readability
 7. Stick to the provided context as closely as possible and do NOT add any other information
-8. Always include a link to referenced context document (it's url)`;
+8. Always include a link to referenced context document (it's url)
+9. If the question is unrelated to the context, say so and don't try to answer it
+10. Never ask a user to provide more context, they cannot.
+11. When referring to the context documents, always use the term "MDN documentation"`;
 }
 
 /**
