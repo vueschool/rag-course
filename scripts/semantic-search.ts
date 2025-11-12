@@ -6,6 +6,7 @@ import { chunks, documents } from "../src/db/schema";
 import { embed } from "ai";
 import { createVoyage } from "voyage-ai-provider";
 import { sql } from "drizzle-orm";
+import { rerankResults } from "./reranker";
 
 config();
 
@@ -89,6 +90,7 @@ export interface SearchResult {
   documentSlug: string | null;
   bm25Score?: number; // BM25 score from full-text search
   vectorScore?: number; // Vector similarity score
+  rerankScore?: number; // Reranker relevance score
 }
 
 /**
@@ -273,6 +275,11 @@ function displayResults(results: SearchResult[], question: string): void {
     console.log(`   📁 Source: ${result.sourceFilePath}`);
     console.log(`   🔗 Slug: ${result.documentSlug || "N/A"}`);
     console.log(`   🎯 RRF Score: ${result.similarity.toFixed(6)}`);
+    if (result.rerankScore !== undefined) {
+      console.log(
+        `   ⭐ Rerank Score: ${(result.rerankScore * 100).toFixed(2)}%`
+      );
+    }
     if (result.vectorScore !== undefined) {
       console.log(
         `   🔢 Vector Score: ${(result.vectorScore * 100).toFixed(2)}%`
@@ -328,15 +335,26 @@ async function performSemanticSearch(
     const questionEmbedding = await generateQuestionEmbedding(question);
 
     // Search for similar chunks using hybrid search with RRF
-    const results = await hybridSearch(question, questionEmbedding, limit, {
-      similarityThreshold,
-      rrfK: 60, // Standard RRF parameter
-    });
+    const hybridResults = await hybridSearch(
+      question,
+      questionEmbedding,
+      limit,
+      {
+        similarityThreshold,
+        rrfK: 60, // Standard RRF parameter
+      }
+    );
+
+    // Rerank results using Voyage AI reranker
+    const results = await rerankResults(question, hybridResults);
+
+    // Limit to requested number of results after reranking
+    const finalResults = results.slice(0, limit);
 
     // Display results
-    displayResults(results, question);
+    displayResults(finalResults, question);
 
-    return results;
+    return finalResults;
   } catch (error) {
     console.error("❌ Semantic search failed:", error);
     throw error;

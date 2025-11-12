@@ -41,7 +41,8 @@
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
     "slug": "^11.0.0",
-    "voyage-ai-provider": "^2.0.0"
+    "voyage-ai-provider": "^2.0.0",
+    "voyageai": "^0.0.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
